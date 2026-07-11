@@ -313,8 +313,15 @@ async function renderHistory() {
         n.type === "todo"
           ? `<input type="checkbox" class="chk" data-id="${n.id}" ${n.done ? "checked" : ""} />`
           : `<span class="dot"></span>`;
+      const itemCls = [
+        "item",
+        n.type === "todo" ? "todo-item" : "",
+        n.done ? "done" : "",
+      ]
+        .filter(Boolean)
+        .join(" ");
       return `
-        <div class="item ${n.done ? "done" : ""}">
+        <div class="${itemCls}" data-id="${n.id}" data-type="${n.type}" data-done="${n.done}">
           ${checkbox}
           <span class="badge ${n.type}">${badge}</span>
           <span class="text">${escapeHtml(n.text)}</span>
@@ -324,9 +331,12 @@ async function renderHistory() {
     })
     .join("");
 
-  historyList.querySelectorAll<HTMLInputElement>(".chk").forEach((chk) => {
-    chk.addEventListener("change", async () => {
-      await toggleTodo(chk.dataset.id!, chk.checked);
+  historyList.querySelectorAll<HTMLDivElement>(".todo-item").forEach((item) => {
+    item.addEventListener("click", async (e) => {
+      if ((e.target as HTMLElement).closest(".del")) return;
+      const id = item.dataset.id!;
+      const done = item.dataset.done === "true";
+      await toggleTodo(id, !done);
       renderHistory();
     });
   });

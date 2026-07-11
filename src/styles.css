@@ -285,12 +285,17 @@ body {
   color: var(--muted);
 }
 
+.todo-item {
+  cursor: pointer;
+}
+
 .chk {
   width: 15px;
   height: 15px;
   accent-color: var(--todo);
   cursor: pointer;
   flex-shrink: 0;
+  pointer-events: none;
 }
 
 .dot {
