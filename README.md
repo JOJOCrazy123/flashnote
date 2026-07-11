@@ -17,6 +17,23 @@ Built with **Tauri v2 + TypeScript**, no frontend framework. The release bundle 
 
 ---
 
+## Quick Start
+
+```bash
+# Install frontend dependencies
+npm install
+
+# Run in development (hot reload)
+npm run tauri:dev
+
+# Build a production bundle
+#   macOS -> .app / .dmg
+#   Windows -> .msi / .exe
+npm run tauri:build
+```
+
+---
+
 ## Tech Stack
 
 | Layer      | Choice                                            |
@@ -34,23 +51,6 @@ Built with **Tauri v2 + TypeScript**, no frontend framework. The release bundle 
 - [Node.js](https://nodejs.org/) 18+
 - [Rust toolchain](https://www.rust-lang.org/tools/install) (stable) + Cargo
 - Platform build dependencies per the [Tauri prerequisites guide](https://tauri.app/start/prerequisites/)
-
----
-
-## Getting Started
-
-```bash
-# Install frontend dependencies
-npm install
-
-# Run in development (hot reload)
-npm run tauri:dev
-
-# Build a production bundle
-#   macOS -> .app / .dmg
-#   Windows -> .msi / .exe
-npm run tauri:build
-```
 
 ---
 

@@ -9,6 +9,25 @@ dist-ssr/
 src-tauri/target/
 src-tauri/gen/schemas/
 
+# ---- Build / Packaging artifacts (belt-and-suspenders) ----
+# Tauri bundle output (covered by target/, but be explicit)
+src-tauri/target/release/bundle/
+# Common installer/binary formats — anywhere in the repo
+*.app/
+*.dmg
+*.pkg
+*.msi
+*.exe
+*.deb
+*.rpm
+*.AppImage
+*.snap
+# Ad-hoc release folders
+/release/
+/build/
+/out/
+/artifacts/
+
 # ---- Logs ----
 *.log
 npm-debug.log*
