@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build && npm run install:macos",
+    "install:macos": "test \"$(uname)\" = Darwin && rm -rf /Applications/FlashNote.app && mv src-tauri/target/release/bundle/macos/FlashNote.app /Applications/FlashNote.app || true"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.1.0",
