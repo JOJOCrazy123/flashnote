@@ -1,5 +1,7 @@
 # FlashNote ⚡
 
+> 📖 中文版本：[README](assets/README.zh-CN.md)
+
 A lightweight, cross-platform (macOS & Windows) quick-note desktop app for instantly capturing ideas and todos with a global hotkey — before they slip away.
 
 Built with **Tauri v2 + TypeScript**, no frontend framework. The release bundle is only a few megabytes.
@@ -126,7 +128,8 @@ flashnote/
 ├── settings.html         # Settings window entry
 ├── vite.config.ts        # Multi-page Vite config
 ├── assets/
-│   └── icon-source.png   # Source image used to generate app icons
+│   ├── icon-source.png   # Source image used to generate app icons
+│   └── README.zh-CN.md   # Chinese documentation
 ├── src/                  # Frontend (TypeScript)
 │   ├── main.ts           # Flash input + history logic
 │   ├── styles.css
