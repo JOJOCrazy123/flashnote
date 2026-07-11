@@ -44,8 +44,9 @@ npm install
 npm run tauri:dev
 
 # Build a production bundle
-#   macOS -> .app (auto-installed to /Applications)
+#   macOS -> .app + .dmg (the .app is also auto-installed to /Applications)
 #   Windows -> .msi / .exe
+# Artifacts are copied to release/<version>/ (git-ignored).
 npm run tauri:build
 ```
 
@@ -131,6 +132,8 @@ flashnote/
 │   ├── styles.css
 │   ├── settings.ts       # Settings panel + key capture
 │   └── settings.css
+├── release/              # Build artifacts, split by version (git-ignored)
+│   └── <version>/        # e.g. release/0.2.0/ -> FlashNote.app + .dmg
 └── src-tauri/            # Rust backend
     ├── src/lib.rs        # Commands, tray, global shortcut, persistence
     ├── src/main.rs
