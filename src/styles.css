@@ -1,0 +1,283 @@
+:root {
+  --bg: rgba(28, 28, 32, 0.92);
+  --bg-solid: #1c1c20;
+  --fg: #f2f2f5;
+  --muted: #8a8a95;
+  --accent: #6c8cff;
+  --todo: #ffb454;
+  --insp: #6c8cff;
+  --line: rgba(255, 255, 255, 0.08);
+  --radius: 14px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background: transparent;
+  overflow: hidden;
+  font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei",
+    system-ui, sans-serif;
+  color: var(--fg);
+  user-select: none;
+}
+
+#app {
+  width: 100vw;
+  height: 100vh;
+}
+
+.wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+/* ---------- Top bar ---------- */
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px 4px;
+  cursor: default;
+}
+
+.kind-toggle {
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 2px;
+}
+
+.kind-btn {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  padding: 3px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.kind-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.bar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gear {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.gear:hover {
+  color: var(--fg);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ---------- Input ---------- */
+.input {
+  margin: 6px 12px 10px;
+  padding: 12px 14px;
+  font-size: 17px;
+  border: none;
+  outline: none;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--fg);
+  border-radius: 10px;
+  user-select: text;
+}
+
+.input::placeholder {
+  color: var(--muted);
+}
+
+.edge-hint {
+  text-align: center;
+  font-size: 10px;
+  color: var(--muted);
+  padding-bottom: 4px;
+  opacity: 0.6;
+}
+
+.wrap.expanded .edge-hint {
+  display: none;
+}
+
+/* ---------- History panel ---------- */
+.history {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--line);
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.25s ease, opacity 0.2s ease;
+  overflow: hidden;
+}
+
+.wrap.expanded .history {
+  max-height: 420px;
+  opacity: 1;
+}
+
+.history-head {
+  padding: 8px 12px;
+}
+
+.range-tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.range-tab {
+  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--muted);
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.range-tab.active {
+  background: rgba(108, 140, 255, 0.25);
+  color: var(--fg);
+}
+
+.history-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 8px 10px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.item.done .text {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.chk {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--todo);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--insp);
+  flex-shrink: 0;
+  margin: 0 4px;
+}
+
+.badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.badge.todo {
+  background: rgba(255, 180, 84, 0.2);
+  color: var(--todo);
+}
+
+.badge.inspiration {
+  background: rgba(108, 140, 255, 0.2);
+  color: var(--insp);
+}
+
+.text {
+  flex: 1;
+  user-select: text;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.time {
+  font-size: 11px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.del {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  opacity: 0;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+
+.item:hover .del {
+  opacity: 1;
+}
+
+.del:hover {
+  color: #ff6b6b;
+}
+
+.empty {
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 30px 0;
+}
+
+/* Scrollbar */
+.history-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.history-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
