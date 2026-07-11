@@ -22,7 +22,7 @@ src-tauri/target/release/bundle/
 *.rpm
 *.AppImage
 *.snap
-# Ad-hoc release folders
+# Ad-hoc release folders (Tauri .app/.dmg build artifacts land here, split by version)
 /release/
 /build/
 /out/

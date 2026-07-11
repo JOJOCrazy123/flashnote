@@ -9,8 +9,9 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build && npm run install:macos",
-    "install:macos": "test \"$(uname)\" = Darwin || exit 0; osascript -e 'quit app \"FlashNote\"' 2>/dev/null || true; sleep 1; rm -rf /Applications/FlashNote.app && ditto src-tauri/target/release/bundle/macos/FlashNote.app /Applications/FlashNote.app && xattr -dr com.apple.quarantine /Applications/FlashNote.app"
+    "tauri:build": "tauri build && npm run install:macos && npm run copy:release",
+    "install:macos": "test \"$(uname)\" = Darwin || exit 0; osascript -e 'quit app \"FlashNote\"' 2>/dev/null || true; sleep 1; rm -rf /Applications/FlashNote.app && ditto src-tauri/target/release/bundle/macos/FlashNote.app /Applications/FlashNote.app && xattr -dr com.apple.quarantine /Applications/FlashNote.app",
+    "copy:release": "test \"$(uname)\" = Darwin || exit 0; V=$(node -p \"require('./package.json').version\"); D=\"release/$V\"; mkdir -p \"$D\"; rm -rf \"$D/FlashNote.app\"; ditto src-tauri/target/release/bundle/macos/FlashNote.app \"$D/FlashNote.app\"; cp -f src-tauri/target/release/bundle/dmg/*.dmg \"$D/\" 2>/dev/null || true; echo \"Artifacts copied to $D\""
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.1.0",
