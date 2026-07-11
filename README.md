@@ -44,7 +44,7 @@ npm install
 npm run tauri:dev
 
 # Build a production bundle
-#   macOS -> .app / .dmg
+#   macOS -> .app (auto-installed to /Applications)
 #   Windows -> .msi / .exe
 npm run tauri:build
 ```
