@@ -115,17 +115,18 @@ const historyEl = document.querySelector<HTMLDivElement>("#history")!;
 const historyList = document.querySelector<HTMLDivElement>("#history-list")!;
 
 // Committed-but-not-yet-saved entries (batch input via double-space).
-let pending: string[] = [];
+// Each entry remembers the kind that was active when it was committed, so
+// switching lists afterwards doesn't retroactively change queued entries.
+let pending: { text: string; kind: Kind }[] = [];
 let composing = false;
 let lastSpaceTs = 0;
 const DOUBLE_SPACE_MS = 350;
 
 function renderChips() {
-  const kindCls = currentKind === "todo" ? "todo" : "inspiration";
   chipsEl.innerHTML = pending
     .map(
-      (t, i) =>
-        `<span class="chip ${kindCls}"><span class="chip-text">${escapeHtml(t)}</span><button class="chip-del" data-i="${i}" title="删除">✕</button></span>`,
+      (entry, i) =>
+        `<span class="chip ${entry.kind === "todo" ? "todo" : "inspiration"}"><span class="chip-text">${escapeHtml(entry.text)}</span><button class="chip-del" data-i="${i}" title="删除">✕</button></span>`,
     )
     .join("");
   chipsEl.querySelectorAll<HTMLButtonElement>(".chip-del").forEach((btn) => {
@@ -151,7 +152,7 @@ function adjustHeight() {
 function commitCurrent(): boolean {
   const text = input.value.trim();
   if (!text) return false;
-  pending.push(text);
+  pending.push({ text, kind: currentKind });
   input.value = "";
   renderChips();
   return true;
@@ -159,14 +160,25 @@ function commitCurrent(): boolean {
 
 // Enter = finish: save current text + all chips as separate notes, then hide.
 async function finishInput() {
-  const texts = [...pending];
+  const entries = [...pending];
   const cur = input.value.trim();
-  if (cur) texts.push(cur);
-  if (texts.length === 0) {
+  if (cur) entries.push({ text: cur, kind: currentKind });
+  if (entries.length === 0) {
     await hideWindow();
     return;
   }
-  await addNotes(texts, currentKind);
+  // Preserve order while grouping consecutive entries of the same kind so each
+  // note is saved with the kind that was active when it was entered.
+  let i = 0;
+  while (i < entries.length) {
+    const kind = entries[i].kind;
+    const texts: string[] = [];
+    while (i < entries.length && entries[i].kind === kind) {
+      texts.push(entries[i].text);
+      i++;
+    }
+    await addNotes(texts, kind);
+  }
   pending = [];
   input.value = "";
   renderChips();
