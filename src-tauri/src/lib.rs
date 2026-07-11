@@ -108,6 +108,39 @@ fn add_note(app: AppHandle, text: String, kind: String) -> Result<Note, String> 
     Ok(note)
 }
 
+/// Save several notes of the same kind in a single write.
+#[tauri::command]
+fn add_notes(app: AppHandle, texts: Vec<String>, kind: String) -> Result<Vec<Note>, String> {
+    let day = today();
+    let mut notes = load_day(&app, &day);
+    let now = Local::now().timestamp_millis();
+    let kind = if kind == "todo" {
+        "todo".to_string()
+    } else {
+        "inspiration".to_string()
+    };
+    let mut added: Vec<Note> = Vec::new();
+    for text in texts {
+        let trimmed = text.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        let note = Note {
+            id: format!("{}-{}", now, notes.len()),
+            text: trimmed.to_string(),
+            kind: kind.clone(),
+            done: false,
+            ts: now,
+        };
+        notes.push(note.clone());
+        added.push(note);
+    }
+    if !added.is_empty() {
+        save_day(&app, &day, &notes)?;
+    }
+    Ok(added)
+}
+
 #[tauri::command]
 fn get_day(app: AppHandle, day: String) -> Vec<Note> {
     load_day(&app, &day)
@@ -389,6 +422,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             add_note,
+            add_notes,
             get_day,
             get_range,
             toggle_todo,

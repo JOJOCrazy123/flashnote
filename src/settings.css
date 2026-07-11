@@ -1,9 +1,15 @@
 :root {
-  --bg: #1c1c20;
-  --fg: #f2f2f5;
-  --muted: #8a8a95;
-  --accent: #6c8cff;
-  --line: rgba(255, 255, 255, 0.1);
+  /* Cyber-neon palette */
+  --cyan: #00f0ff;
+  --magenta: #ff007f;
+  --amber: #ff9900;
+  --purple: #9400d3;
+
+  --bg: #0b0c10;
+  --fg: #e8f6ff;
+  --muted: #6f8592;
+  --accent: var(--cyan);
+  --line: rgba(0, 240, 255, 0.16);
 }
 
 * {
@@ -15,7 +21,7 @@
 body {
   font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei",
     system-ui, sans-serif;
-  background: var(--bg);
+  background: linear-gradient(160deg, #1f2833, #0b0c10);
   color: var(--fg);
   user-select: none;
 }
@@ -31,6 +37,8 @@ h1 {
   font-size: 18px;
   font-weight: 600;
   margin-bottom: 20px;
+  color: var(--cyan);
+  text-shadow: 0 0 12px rgba(0, 240, 255, 0.5);
 }
 
 .row {
@@ -53,16 +61,17 @@ h1 {
   letter-spacing: 2px;
   cursor: pointer;
   outline: none;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
 
 .capture-box:hover {
-  border-color: rgba(108, 140, 255, 0.5);
+  border-color: rgba(0, 240, 255, 0.5);
 }
 
 .capture-box.capturing {
-  border-color: var(--accent);
-  background: rgba(108, 140, 255, 0.1);
+  border-color: var(--cyan);
+  background: rgba(0, 240, 255, 0.1);
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.3);
 }
 
 .tip {
@@ -84,11 +93,11 @@ h1 {
 }
 
 .status.ok {
-  color: #4ecb71;
+  color: var(--cyan);
 }
 
 .status.err {
-  color: #ff6b6b;
+  color: var(--magenta);
 }
 
 .btn {
@@ -100,16 +109,20 @@ h1 {
 }
 
 .btn.primary {
-  background: var(--accent);
-  color: #fff;
+  background: var(--cyan);
+  color: #0b0c10;
+  font-weight: 600;
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.45);
 }
 
 .btn.primary:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .btn.ghost {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(0, 240, 255, 0.08);
   color: var(--fg);
+  border: 1px solid rgba(0, 240, 255, 0.15);
 }
