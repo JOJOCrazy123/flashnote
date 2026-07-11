@@ -17,6 +17,23 @@ Built with **Tauri v2 + TypeScript**, no frontend framework. The release bundle 
 
 ---
 
+## Why FlashNote? — Size Comparison
+
+Most note-taking desktop apps are built on **Electron**, which bundles a full Chromium runtime — so their installers routinely weigh **100–240 MB**. FlashNote is built on **Tauri**, using the OS-native webview instead, so the entire macOS `.dmg` is just **4.1 MB**.
+
+| App / Project | Stack | Installer / Package size | Where you can see the size |
+| ------------- | -------- | ------------------------ | -------------------------- |
+| **⚡ FlashNote** | **Tauri** | **≈ 4.1 MB** (macOS `.dmg`) | this repository |
+| [Obsidian](https://forum.obsidian.md/t/obsidian-for-windows-1-6-5-installer-increased-in-size-from-79-mb-to-236-mb/84322) | Electron | ≈ 236 MB (Windows installer) | Obsidian forum thread |
+| [Logseq](https://github.com/logseq/logseq/releases) | Electron | ≈ 190 MB (macOS arm64 `.dmg`) | GitHub releases |
+| [Joplin](https://github.com/laurent22/joplin/releases) | Electron | ≈ 148 MB (macOS arm64 `.dmg`) | GitHub releases |
+| [Simplenote](https://sourceforge.net/projects/simplenote-for-electron.mirror/files/) | Electron | ≈ 143 MB (Linux arm64 `.tar.gz`) | SourceForge release mirror |
+| [TriliumNext Notes](https://github.com/TriliumNext/Notes/releases) | Electron | ≈ 119 MB (Linux `.deb`) | GitHub releases |
+
+> Sizes above are from the linked official release/download pages (verified, not estimated). Against them, FlashNote's 4.1 MB bundle is roughly **30×–58× smaller** — a genuinely lightweight quick-capture tool.
+
+---
+
 ## Quick Start
 
 ```bash
