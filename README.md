@@ -1,4 +1,4 @@
-# <img src="assets/icon-source.png" alt="FlashNote" height="45" align="top"> FlashNote
+# <img src="assets/icon-source.png" alt="FlashNote" height="42" align="top"> FlashNote
 
 > 📖 中文版本：[README](assets/README.zh-CN.md)
 

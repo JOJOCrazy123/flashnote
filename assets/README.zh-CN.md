@@ -1,4 +1,4 @@
-# FlashNote ⚡
+# <img src="icon-source.png" alt="FlashNote" height="42" align="top"> FlashNote
 
 > 📖 English version: [README](../README.md)
 
@@ -23,14 +23,14 @@
 
 大多数记事桌面应用基于 **Electron** 构建，需要打包完整的 Chromium 运行时，因此安装包动辄 **100–240 MB**。FlashNote 基于 **Tauri**，复用操作系统原生 webview，整个 macOS `.dmg` 仅 **4.1 MB**。
 
-| 应用 / 项目 | 技术栈 | 安装包 / 打包体积 | 体积来源 |
-| ----------- | ------ | ----------------- | -------- |
-| **⚡ FlashNote** | **Tauri** | **≈ 4.1 MB**（macOS `.dmg`） | 本仓库 |
-| [Obsidian](https://forum.obsidian.md/t/obsidian-for-windows-1-6-5-installer-increased-in-size-from-79-mb-to-236-mb/84322) | Electron | ≈ 236 MB（Windows 安装包） | Obsidian 论坛帖 |
-| [Logseq](https://github.com/logseq/logseq/releases) | Electron | ≈ 190 MB（macOS arm64 `.dmg`） | GitHub releases |
-| [Joplin](https://github.com/laurent22/joplin/releases) | Electron | ≈ 148 MB（macOS arm64 `.dmg`） | GitHub releases |
-| [Simplenote](https://sourceforge.net/projects/simplenote-for-electron.mirror/files/) | Electron | ≈ 143 MB（Linux arm64 `.tar.gz`） | SourceForge 发布镜像 |
-| [TriliumNext Notes](https://github.com/TriliumNext/Notes/releases) | Electron | ≈ 119 MB（Linux `.deb`） | GitHub releases |
+| 应用 / 项目                                                                                                              | 技术栈          | 安装包 / 打包体积                     | 体积来源             |
+| ------------------------------------------------------------------------------------------------------------------------ | --------------- | ------------------------------------- | -------------------- |
+| **⚡ FlashNote**                                                                                                   | **Tauri** | **≈ 4.1 MB**（macOS `.dmg`） | 本仓库               |
+| [Obsidian](https://forum.obsidian.md/t/obsidian-for-windows-1-6-5-installer-increased-in-size-from-79-mb-to-236-mb/84322) | Electron        | ≈ 236 MB（Windows 安装包）           | Obsidian 论坛帖      |
+| [Logseq](https://github.com/logseq/logseq/releases)                                                                       | Electron        | ≈ 190 MB（macOS arm64`.dmg`）      | GitHub releases      |
+| [Joplin](https://github.com/laurent22/joplin/releases)                                                                    | Electron        | ≈ 148 MB（macOS arm64`.dmg`）      | GitHub releases      |
+| [Simplenote](https://sourceforge.net/projects/simplenote-for-electron.mirror/files/)                                      | Electron        | ≈ 143 MB（Linux arm64`.tar.gz`）   | SourceForge 发布镜像 |
+| [TriliumNext Notes](https://github.com/TriliumNext/Notes/releases)                                                        | Electron        | ≈ 119 MB（Linux`.deb`）            | GitHub releases      |
 
 > 以上体积均取自对应官方发布/下载页面（已核实，非估算）。相较之下，FlashNote 的 4.1 MB 打包体积约小 **30×–58×**，是一款真正轻量的速记工具。
 
@@ -56,13 +56,13 @@ npm run tauri:build
 
 ## 技术栈
 
-| 层级   | 选型                                              |
-| ------ | ------------------------------------------------- |
-| 外壳   | [Tauri v2](https://tauri.app/)（Rust）            |
-| 前端   | 原生 TypeScript + Vite                            |
-| 存储   | 操作系统应用数据目录下的按天 JSON 文件            |
-| 快捷键 | `tauri-plugin-global-shortcut`                    |
-| 日期   | `chrono`（Rust）                                  |
+| 层级   | 选型                                   |
+| ------ | -------------------------------------- |
+| 外壳   | [Tauri v2](https://tauri.app/)（Rust）  |
+| 前端   | 原生 TypeScript + Vite                 |
+| 存储   | 操作系统应用数据目录下的按天 JSON 文件 |
+| 快捷键 | `tauri-plugin-global-shortcut`       |
+| 日期   | `chrono`（Rust）                     |
 
 ---
 
@@ -97,10 +97,10 @@ npm run tauri:build
 
 笔记以每天一个 JSON 文件的形式，存储在操作系统的应用数据目录下：
 
-| 系统    | 路径                                                             |
-| ------- | ---------------------------------------------------------------- |
-| macOS   | `~/Library/Application Support/<app-identifier>/notes/`          |
-| Windows | `%APPDATA%\<app-identifier>\notes\`                              |
+| 系统    | 路径                                                      |
+| ------- | --------------------------------------------------------- |
+| macOS   | `~/Library/Application Support/<app-identifier>/notes/` |
+| Windows | `%APPDATA%\<app-identifier>\notes\`                     |
 
 每个文件（`YYYY-MM-DD.json`）是一个笔记对象数组：
 
