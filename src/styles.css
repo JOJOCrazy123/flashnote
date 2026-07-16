@@ -1,23 +1,17 @@
 :root {
-  /* Cyber-neon palette */
-  --cyan: #00f0ff;
-  --magenta: #ff007f;
-  --amber: #ff9900;
-  --purple: #9400d3;
-
-  --midnight: #0b0c10;
-  --charcoal: #1f2833;
-  --slate: #2c3539;
-
-  --bg: rgba(11, 12, 16, 0.9);
-  --bg-solid: var(--midnight);
-  --fg: #e8f6ff;
-  --muted: #6f8592;
-  --accent: var(--cyan);
-  --todo: var(--amber);
-  --insp: var(--cyan);
-  --line: rgba(0, 240, 255, 0.14);
-  --radius: 14px;
+  --paper: #f4f4ee;
+  --paper-soft: #ecece5;
+  --paper-raised: #fbfbf7;
+  --ink: #24231f;
+  --muted: #77756e;
+  --accent: #ff4b2b;
+  --accent-deep: #d93b22;
+  --line: #d8d7cf;
+  --bg: rgba(244, 244, 238, 0.97);
+  --fg: var(--ink);
+  --todo: var(--accent);
+  --insp: var(--accent);
+  --radius: 10px;
 }
 
 * {
@@ -45,13 +39,14 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: linear-gradient(160deg, rgba(31, 40, 51, 0.92), rgba(11, 12, 16, 0.94));
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  background: var(--bg);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   border: 1px solid var(--line);
+  border-left: 7px solid var(--accent);
   border-radius: var(--radius);
   overflow: hidden;
-  box-shadow: 0 0 0 1px rgba(0, 240, 255, 0.06), 0 12px 40px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 12px 32px rgba(36, 35, 31, 0.18);
 }
 
 /* ---------- Top bar ---------- */
@@ -66,14 +61,14 @@ body {
 .kind-toggle {
   display: flex;
   gap: 4px;
-  background: rgba(0, 240, 255, 0.06);
-  border: 1px solid rgba(0, 240, 255, 0.12);
+  background: var(--paper-soft);
+  border: 1px solid var(--line);
   border-radius: 8px;
   padding: 2px;
 }
 
 .kind-btn {
-  border: none;
+  border: 1px solid transparent;
   background: transparent;
   color: var(--muted);
   font-size: 12px;
@@ -84,15 +79,16 @@ body {
 }
 
 .kind-btn.active {
-  background: var(--cyan);
-  color: var(--midnight);
+  background: var(--paper-raised);
+  border-color: var(--accent);
+  color: var(--accent);
   font-weight: 600;
-  box-shadow: 0 0 12px rgba(0, 240, 255, 0.55);
 }
 
 .kind-btn[data-kind="todo"].active {
-  background: var(--amber);
-  box-shadow: 0 0 12px rgba(255, 153, 0, 0.55);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--paper-raised);
 }
 
 .hint {
@@ -115,13 +111,12 @@ body {
   cursor: pointer;
   padding: 4px 6px;
   border-radius: 8px;
-  transition: color 0.15s, background 0.15s, text-shadow 0.15s;
+  transition: color 0.15s, background 0.15s;
 }
 
 .gear:hover {
-  color: var(--cyan);
-  background: rgba(0, 240, 255, 0.1);
-  text-shadow: 0 0 10px rgba(0, 240, 255, 0.7);
+  color: var(--accent);
+  background: rgba(255, 75, 43, 0.08);
 }
 
 /* ---------- Chips (batch input bubbles) ---------- */
@@ -145,16 +140,19 @@ body {
   padding: 4px 6px 4px 10px;
   font-size: 13px;
   border-radius: 999px;
-  border: 1px solid rgba(0, 240, 255, 0.4);
-  background: rgba(0, 240, 255, 0.08);
+  border: 1px solid rgba(255, 75, 43, 0.55);
+  background: var(--paper-raised);
   color: var(--fg);
-  box-shadow: 0 0 8px rgba(0, 240, 255, 0.25);
 }
 
 .chip.todo {
-  border-color: rgba(255, 153, 0, 0.45);
-  background: rgba(255, 153, 0, 0.1);
-  box-shadow: 0 0 8px rgba(255, 153, 0, 0.25);
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--paper-raised);
+}
+
+.chip.todo .chip-del {
+  color: rgba(251, 251, 247, 0.82);
 }
 
 .chip-text {
@@ -178,8 +176,13 @@ body {
 }
 
 .chip-del:hover {
-  color: var(--magenta);
-  background: rgba(255, 0, 127, 0.15);
+  color: var(--accent-deep);
+  background: rgba(217, 59, 34, 0.1);
+}
+
+.chip.todo .chip-del:hover {
+  color: var(--paper-raised);
+  background: rgba(36, 35, 31, 0.16);
 }
 
 /* ---------- Input ---------- */
@@ -187,9 +190,9 @@ body {
   margin: 6px 12px 10px;
   padding: 12px 14px;
   font-size: 17px;
-  border: 1px solid rgba(0, 240, 255, 0.14);
+  border: 1px solid var(--line);
   outline: none;
-  background: rgba(0, 240, 255, 0.04);
+  background: rgba(251, 251, 247, 0.72);
   color: var(--fg);
   border-radius: 10px;
   user-select: text;
@@ -197,8 +200,8 @@ body {
 }
 
 .input:focus {
-  border-color: rgba(0, 240, 255, 0.5);
-  box-shadow: 0 0 14px rgba(0, 240, 255, 0.25);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(255, 75, 43, 0.1);
 }
 
 .input::placeholder {
@@ -244,8 +247,8 @@ body {
 }
 
 .range-tab {
-  border: 1px solid rgba(0, 240, 255, 0.12);
-  background: rgba(0, 240, 255, 0.05);
+  border: 1px solid var(--line);
+  background: var(--paper-raised);
   color: var(--muted);
   font-size: 12px;
   padding: 4px 12px;
@@ -255,10 +258,9 @@ body {
 }
 
 .range-tab.active {
-  background: rgba(0, 240, 255, 0.18);
-  border-color: rgba(0, 240, 255, 0.5);
-  color: var(--cyan);
-  text-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--paper-raised);
 }
 
 .history-list {
@@ -277,7 +279,7 @@ body {
 }
 
 .item:hover {
-  background: rgba(0, 240, 255, 0.06);
+  background: rgba(255, 75, 43, 0.07);
 }
 
 .item.done .text {
@@ -305,7 +307,6 @@ body {
   background: var(--insp);
   flex-shrink: 0;
   margin: 0 4px;
-  box-shadow: 0 0 6px rgba(0, 240, 255, 0.8);
 }
 
 .badge {
@@ -316,12 +317,13 @@ body {
 }
 
 .badge.todo {
-  background: rgba(255, 153, 0, 0.18);
-  color: var(--todo);
+  background: var(--accent);
+  color: var(--paper-raised);
 }
 
 .badge.inspiration {
-  background: rgba(0, 240, 255, 0.18);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(255, 75, 43, 0.55);
   color: var(--insp);
 }
 
@@ -364,7 +366,7 @@ body {
 }
 
 .del:hover {
-  color: var(--magenta);
+  color: var(--accent-deep);
 }
 
 .empty {
@@ -380,6 +382,6 @@ body {
 }
 
 .history-list::-webkit-scrollbar-thumb {
-  background: rgba(0, 240, 255, 0.25);
+  background: rgba(255, 75, 43, 0.55);
   border-radius: 3px;
 }

@@ -1,15 +1,13 @@
 :root {
-  /* Cyber-neon palette */
-  --cyan: #00f0ff;
-  --magenta: #ff007f;
-  --amber: #ff9900;
-  --purple: #9400d3;
-
-  --bg: #0b0c10;
-  --fg: #e8f6ff;
-  --muted: #6f8592;
-  --accent: var(--cyan);
-  --line: rgba(0, 240, 255, 0.16);
+  --paper: #f4f4ee;
+  --paper-soft: #ecece5;
+  --paper-raised: #fbfbf7;
+  --ink: #24231f;
+  --muted: #77756e;
+  --accent: #ff4b2b;
+  --accent-deep: #d93b22;
+  --fg: var(--ink);
+  --line: #d8d7cf;
 }
 
 * {
@@ -21,13 +19,14 @@
 body {
   font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei",
     system-ui, sans-serif;
-  background: linear-gradient(160deg, #1f2833, #0b0c10);
+  background: var(--paper);
   color: var(--fg);
   user-select: none;
 }
 
 .s-wrap {
   padding: 20px 22px;
+  border-left: 7px solid var(--accent);
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -37,8 +36,7 @@ h1 {
   font-size: 18px;
   font-weight: 600;
   margin-bottom: 20px;
-  color: var(--cyan);
-  text-shadow: 0 0 12px rgba(0, 240, 255, 0.5);
+  color: var(--accent);
 }
 
 .row {
@@ -62,16 +60,17 @@ h1 {
   cursor: pointer;
   outline: none;
   transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  background: var(--paper-raised);
 }
 
 .capture-box:hover {
-  border-color: rgba(0, 240, 255, 0.5);
+  border-color: rgba(255, 75, 43, 0.55);
 }
 
 .capture-box.capturing {
-  border-color: var(--cyan);
-  background: rgba(0, 240, 255, 0.1);
-  box-shadow: 0 0 16px rgba(0, 240, 255, 0.3);
+  border-color: var(--accent);
+  background: rgba(255, 75, 43, 0.06);
+  box-shadow: 0 0 0 3px rgba(255, 75, 43, 0.1);
 }
 
 .tip {
@@ -93,11 +92,11 @@ h1 {
 }
 
 .status.ok {
-  color: var(--cyan);
+  color: var(--accent);
 }
 
 .status.err {
-  color: var(--magenta);
+  color: var(--accent-deep);
 }
 
 .btn {
@@ -109,10 +108,9 @@ h1 {
 }
 
 .btn.primary {
-  background: var(--cyan);
-  color: #0b0c10;
+  background: var(--accent);
+  color: var(--paper-raised);
   font-weight: 600;
-  box-shadow: 0 0 14px rgba(0, 240, 255, 0.45);
 }
 
 .btn.primary:disabled {
@@ -122,7 +120,7 @@ h1 {
 }
 
 .btn.ghost {
-  background: rgba(0, 240, 255, 0.08);
+  background: var(--paper-raised);
   color: var(--fg);
-  border: 1px solid rgba(0, 240, 255, 0.15);
+  border: 1px solid var(--line);
 }
