@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
+import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import "./styles.css";
 
 const COLLAPSED_H = 120;
@@ -73,6 +74,12 @@ async function deleteNote(id: string): Promise<void> {
 
 async function hideWindow(): Promise<void> {
   await invoke("hide_window");
+}
+
+async function copyNote(text: string, item: HTMLElement): Promise<void> {
+  await writeText(text);
+  item.classList.add("copied");
+  window.setTimeout(() => item.classList.remove("copied"), 1000);
 }
 
 // ---------- Render ----------
@@ -321,23 +328,29 @@ async function renderHistory() {
         .filter(Boolean)
         .join(" ");
       return `
-        <div class="${itemCls}" data-id="${n.id}" data-type="${n.type}" data-done="${n.done}">
+        <div class="${itemCls}" data-id="${n.id}" data-type="${n.type}" data-done="${n.done}" title="单击复制">
           ${checkbox}
           <span class="badge ${n.type}">${badge}</span>
           <span class="text">${escapeHtml(n.text)}</span>
           <span class="time">${fmtTime(n.ts)}</span>
+          <span class="copy-state">已复制</span>
           <button class="del" data-id="${n.id}" title="删除">✕</button>
         </div>`;
     })
     .join("");
 
-  historyList.querySelectorAll<HTMLDivElement>(".todo-item").forEach((item) => {
-    item.addEventListener("click", async (e) => {
-      if ((e.target as HTMLElement).closest(".del")) return;
-      const id = item.dataset.id!;
-      const done = item.dataset.done === "true";
-      await toggleTodo(id, !done);
+  historyList.querySelectorAll<HTMLInputElement>(".chk").forEach((checkbox) => {
+    checkbox.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      await toggleTodo(checkbox.dataset.id!, checkbox.checked);
       renderHistory();
+    });
+  });
+  historyList.querySelectorAll<HTMLDivElement>(".item").forEach((item) => {
+    item.addEventListener("click", async (e) => {
+      if ((e.target as HTMLElement).closest(".del, .chk")) return;
+      const note = notes.find((n) => n.id === item.dataset.id);
+      if (note) await copyNote(note.text, item);
     });
   });
   historyList.querySelectorAll<HTMLButtonElement>(".del").forEach((btn) => {

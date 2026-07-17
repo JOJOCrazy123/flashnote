@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44">
+  <mask id="bolt-cutout">
+    <rect width="44" height="44" fill="white"/>
+    <path d="M25.5 7.5 13 24h8l-3 12.5L31 19h-8.2z" fill="black"/>
+  </mask>
+  <path d="M10 5h17l9 9v25H10z" fill="black" mask="url(#bolt-cutout)"/>
+  <path d="M27 5v9h9z" fill="none" stroke="black" stroke-width="2" stroke-linejoin="round"/>
+</svg>

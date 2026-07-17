@@ -1,6 +1,6 @@
 {
   "name": "flashnote",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "轻量级速记应用：全局快捷键快闪记录灵感与 todo",
   "type": "module",
   "scripts": {
@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@tauri-apps/api": "^2.1.1",
+    "@tauri-apps/plugin-clipboard-manager": "^2.3.2",
     "@tauri-apps/plugin-global-shortcut": "^2.2.0"
   }
 }
