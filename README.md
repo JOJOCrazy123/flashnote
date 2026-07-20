@@ -89,7 +89,7 @@ Open **Settings** from either:
 - The **tray icon** → right-click → *Settings…*, or
 - The **gear ⚙ button** in the top-right of the flash window.
 
-Click the capture box, press your desired combo (must be **one or more modifiers + a main key**, e.g. `⌘⇧A`), then **Save**. The new hotkey is registered instantly.
+Click the capture box, hold your desired combo (must be **one or more modifiers + one or more main keys**, e.g. `⌘⇧A` or `⇧QW`), then release a main key and click **Save**. The new hotkey is registered instantly.
 
 ---
 

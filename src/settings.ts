@@ -17,7 +17,7 @@ app.innerHTML = `
       <div class="capture-box" id="capture" tabindex="0">
         <span id="shortcut-text">点击此处后按下组合键</span>
       </div>
-      <p class="tip">需含至少一个修饰键（⌘/Ctrl/⌥/⇧）+ 一个主键，例如 ⌘⇧A</p>
+      <p class="tip">需含至少一个修饰键（⌘/Ctrl/⌥/⇧）+ 一个或多个主键，例如 ⇧QW</p>
     </section>
 
     <div class="actions">
@@ -36,6 +36,8 @@ const statusEl = document.querySelector<HTMLSpanElement>("#status")!;
 
 let captured = ""; // accelerator string for backend, e.g. "CmdOrCtrl+Shift+A"
 let capturing = false;
+let capturedMods: string[] = [];
+const capturedMainKeys = new Set<string>();
 
 const isMac = navigator.platform.toUpperCase().includes("MAC");
 
@@ -63,13 +65,19 @@ loadCurrent();
 // ---- Key capture ----
 captureBox.addEventListener("click", () => {
   capturing = true;
+  capturedMods = [];
+  capturedMainKeys.clear();
   captureBox.classList.add("capturing");
   shortcutText.textContent = "请按下组合键…";
+  statusEl.textContent = "";
+  captureBox.focus();
 });
 
 captureBox.addEventListener("keydown", (e) => {
   if (!capturing) return;
   e.preventDefault();
+
+  if (e.repeat) return;
 
   const mods: string[] = [];
   if (e.metaKey) mods.push(isMac ? "Cmd" : "Super");
@@ -77,18 +85,17 @@ captureBox.addEventListener("keydown", (e) => {
   if (e.altKey) mods.push("Alt");
   if (e.shiftKey) mods.push("Shift");
 
-  const key = e.key;
-  const isModifierOnly = ["Meta", "Control", "Alt", "Shift"].includes(key);
+  const isModifierOnly = ["Meta", "Control", "Alt", "Shift"].includes(e.key);
   if (isModifierOnly) {
     shortcutText.textContent = displayFor(mods.join("+") + "+");
     return;
   }
 
   let mainKey = "";
-  if (/^[a-zA-Z]$/.test(key)) mainKey = key.toUpperCase();
-  else if (/^[0-9]$/.test(key)) mainKey = key;
-  else if (key === " ") mainKey = "Space";
-  else if (key === "Enter") mainKey = "Enter";
+  if (/^Key[A-Z]$/.test(e.code)) mainKey = e.code.slice(3);
+  else if (/^Digit[0-9]$/.test(e.code)) mainKey = e.code.slice(5);
+  else if (e.code === "Space") mainKey = "Space";
+  else if (e.code === "Enter" || e.code === "NumpadEnter") mainKey = "Enter";
 
   if (!mainKey || mods.length === 0) {
     statusEl.textContent = "需修饰键 + 主键";
@@ -103,13 +110,31 @@ captureBox.addEventListener("keydown", (e) => {
   // De-dup CmdOrCtrl
   const dedup = normalizedMods.filter((m, i) => normalizedMods.indexOf(m) === i);
 
-  captured = [...dedup, mainKey].join("+");
+  capturedMods = dedup;
+  capturedMainKeys.add(mainKey);
+  shortcutText.textContent = displayFor([...capturedMods, ...capturedMainKeys].join("+"));
+  statusEl.textContent = "";
+  statusEl.className = "status";
+});
+
+captureBox.addEventListener("keyup", (e) => {
+  if (!capturing) return;
+  e.preventDefault();
+
+  const releasedMainKey =
+    /^Key[A-Z]$/.test(e.code) ||
+    /^Digit[0-9]$/.test(e.code) ||
+    e.code === "Space" ||
+    e.code === "Enter" ||
+    e.code === "NumpadEnter";
+
+  if (!releasedMainKey || capturedMainKeys.size === 0) return;
+
+  captured = [...capturedMods, ...capturedMainKeys].join("+");
   capturing = false;
   captureBox.classList.remove("capturing");
   shortcutText.textContent = displayFor(captured);
   saveBtn.disabled = false;
-  statusEl.textContent = "";
-  statusEl.className = "status";
 });
 
 captureBox.addEventListener("blur", () => {

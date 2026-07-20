@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -36,6 +37,13 @@ impl Default for Settings {
 
 struct AppState {
     settings: Mutex<Settings>,
+    shortcut_keys: Mutex<ShortcutKeyState>,
+}
+
+#[derive(Default)]
+struct ShortcutKeyState {
+    pressed: HashSet<u32>,
+    triggered: bool,
 }
 
 // ---------- Path helpers ----------
@@ -211,13 +219,25 @@ fn get_settings(state: State<AppState>) -> Settings {
 #[tauri::command]
 fn set_shortcut(app: AppHandle, state: State<AppState>, shortcut: String) -> Result<(), String> {
     let old = state.settings.lock().unwrap().shortcut.clone();
-    // Re-register: unregister old, register new.
+    let old_shortcuts = parse_shortcuts(&old).unwrap_or_default();
+    let new_shortcuts = parse_shortcuts(&shortcut).ok_or("无法解析快捷键")?;
     let gs = app.global_shortcut();
-    if let Some(parsed_old) = parse_shortcut(&old) {
-        let _ = gs.unregister(parsed_old);
+
+    if !old_shortcuts.is_empty() {
+        let _ = gs.unregister_multiple(old_shortcuts.iter().copied());
     }
-    let parsed_new = parse_shortcut(&shortcut).ok_or("无法解析快捷键")?;
-    gs.register(parsed_new).map_err(|e| e.to_string())?;
+
+    let mut registered = Vec::new();
+    for new_shortcut in &new_shortcuts {
+        if let Err(error) = gs.register(*new_shortcut) {
+            let _ = gs.unregister_multiple(registered.iter().copied());
+            for old_shortcut in &old_shortcuts {
+                let _ = gs.register(*old_shortcut);
+            }
+            return Err(error.to_string());
+        }
+        registered.push(*new_shortcut);
+    }
 
     {
         let mut s = state.settings.lock().unwrap();
@@ -225,6 +245,7 @@ fn set_shortcut(app: AppHandle, state: State<AppState>, shortcut: String) -> Res
         let json = serde_json::to_string_pretty(&*s).map_err(|e| e.to_string())?;
         fs::write(settings_file(&app), json).map_err(|e| e.to_string())?;
     }
+    *state.shortcut_keys.lock().unwrap() = ShortcutKeyState::default();
     Ok(())
 }
 
@@ -265,10 +286,11 @@ fn toggle_main_window(app: &AppHandle) {
     }
 }
 
-/// Parse a string like "CmdOrCtrl+Shift+A" into a Shortcut.
-fn parse_shortcut(s: &str) -> Option<Shortcut> {
+/// Parse a string like "Shift+Q+W" into the individual shortcuts used
+/// to detect that all main keys are held at the same time.
+fn parse_shortcuts(s: &str) -> Option<Vec<Shortcut>> {
     let mut mods = Modifiers::empty();
-    let mut key_code: Option<Code> = None;
+    let mut key_codes = Vec::new();
     for part in s.split('+') {
         match part.trim().to_ascii_lowercase().as_str() {
             "cmdorctrl" | "commandorcontrol" => {
@@ -285,10 +307,24 @@ fn parse_shortcut(s: &str) -> Option<Shortcut> {
             "ctrl" | "control" => mods |= Modifiers::CONTROL,
             "alt" | "option" => mods |= Modifiers::ALT,
             "shift" => mods |= Modifiers::SHIFT,
-            other => key_code = code_from_str(other),
+            other => {
+                let code = code_from_str(other)?;
+                if key_codes.contains(&code) {
+                    return None;
+                }
+                key_codes.push(code);
+            }
         }
     }
-    key_code.map(|code| Shortcut::new(Some(mods), code))
+    if key_codes.is_empty() {
+        return None;
+    }
+    Some(
+        key_codes
+            .into_iter()
+            .map(|code| Shortcut::new(Some(mods), code))
+            .collect(),
+    )
 }
 
 fn code_from_str(s: &str) -> Option<Code> {
@@ -343,6 +379,34 @@ fn load_settings(app: &AppHandle) -> Settings {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_multiple_letter_keys() {
+        let shortcuts = parse_shortcuts("Shift+Q+W").unwrap();
+
+        assert_eq!(shortcuts.len(), 2);
+        assert!(shortcuts[0].matches(Modifiers::SHIFT, Code::KeyQ));
+        assert!(shortcuts[1].matches(Modifiers::SHIFT, Code::KeyW));
+    }
+
+    #[test]
+    fn parses_shifted_digit_as_physical_digit_key() {
+        let shortcuts = parse_shortcuts("Shift+Q+1").unwrap();
+
+        assert_eq!(shortcuts.len(), 2);
+        assert!(shortcuts[0].matches(Modifiers::SHIFT, Code::KeyQ));
+        assert!(shortcuts[1].matches(Modifiers::SHIFT, Code::Digit1));
+    }
+
+    #[test]
+    fn rejects_duplicate_main_keys() {
+        assert!(parse_shortcuts("Shift+Q+Q").is_none());
+    }
+}
+
 // ---------- App entry ----------
 
 pub fn run() {
@@ -350,8 +414,44 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
-                .with_handler(|app, _shortcut, event| {
-                    if event.state() == ShortcutState::Pressed {
+                .with_handler(|app, shortcut, event| {
+                    let state = app.state::<AppState>();
+                    let shortcut_ids: HashSet<u32> = {
+                        let settings = state.settings.lock().unwrap();
+                        parse_shortcuts(&settings.shortcut)
+                            .unwrap_or_default()
+                            .into_iter()
+                            .map(|shortcut| shortcut.id())
+                            .collect()
+                    };
+
+                    if !shortcut_ids.contains(&shortcut.id()) {
+                        return;
+                    }
+
+                    let should_toggle = {
+                        let mut keys = state.shortcut_keys.lock().unwrap();
+                        match event.state() {
+                            ShortcutState::Pressed => {
+                                keys.pressed.insert(shortcut.id());
+                                if !keys.triggered
+                                    && shortcut_ids.iter().all(|id| keys.pressed.contains(id))
+                                {
+                                    keys.triggered = true;
+                                    true
+                                } else {
+                                    false
+                                }
+                            }
+                            ShortcutState::Released => {
+                                keys.pressed.remove(&shortcut.id());
+                                keys.triggered = false;
+                                false
+                            }
+                        }
+                    };
+
+                    if should_toggle {
                         toggle_main_window(app);
                     }
                 })
@@ -362,12 +462,13 @@ pub fn run() {
             let settings = load_settings(&handle);
 
             // Register global shortcut from settings.
-            if let Some(sc) = parse_shortcut(&settings.shortcut) {
-                let _ = handle.global_shortcut().register(sc);
+            if let Some(shortcuts) = parse_shortcuts(&settings.shortcut) {
+                let _ = handle.global_shortcut().register_multiple(shortcuts);
             }
 
             app.manage(AppState {
                 settings: Mutex::new(settings),
+                shortcut_keys: Mutex::new(ShortcutKeyState::default()),
             });
 
             // ---- System tray ----
