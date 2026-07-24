@@ -4,6 +4,7 @@ import "./settings.css";
 
 interface Settings {
   shortcut: string;
+  day_tabs: number[];
 }
 
 const app = document.querySelector<HTMLDivElement>("#settings-app")!;
@@ -20,6 +21,12 @@ app.innerHTML = `
       <p class="tip">需含至少一个修饰键（⌘/Ctrl/⌥/⇧）+ 一个或多个主键，例如 ⇧QW</p>
     </section>
 
+    <section class="row">
+      <label>历史面板 · 显示最近几天</label>
+      <div class="day-tabs-config" id="day-tabs-config"></div>
+      <p class="tip">勾选后，历史面板将显示对应日期的标签；今天、本周、本月始终显示</p>
+    </section>
+
     <div class="actions">
       <span class="status" id="status"></span>
       <button class="btn ghost" id="cancel">关闭</button>
@@ -33,11 +40,51 @@ const shortcutText = document.querySelector<HTMLSpanElement>("#shortcut-text")!;
 const saveBtn = document.querySelector<HTMLButtonElement>("#save")!;
 const cancelBtn = document.querySelector<HTMLButtonElement>("#cancel")!;
 const statusEl = document.querySelector<HTMLSpanElement>("#status")!;
+const dayTabsConfig = document.querySelector<HTMLDivElement>("#day-tabs-config")!;
+
+// Day offsets (1 = yesterday … 6 = six days ago) the user can enable as history tabs.
+const DAY_OPTIONS = [
+  { offset: 1, label: "昨天" },
+  { offset: 2, label: "前天" },
+  { offset: 3, label: "3天前" },
+  { offset: 4, label: "4天前" },
+  { offset: 5, label: "5天前" },
+  { offset: 6, label: "6天前" },
+];
 
 let captured = ""; // accelerator string for backend, e.g. "CmdOrCtrl+Shift+A"
 let capturing = false;
 let capturedMods: string[] = [];
 const capturedMainKeys = new Set<string>();
+
+let savedShortcut = "";
+let savedDayTabs: number[] = [];
+
+function markDirty() {
+  saveBtn.disabled = false;
+}
+
+function renderDayTabsConfig() {
+  dayTabsConfig.innerHTML = DAY_OPTIONS.map(
+    (o) => `
+      <label class="day-opt${savedDayTabs.includes(o.offset) ? " on" : ""}">
+        <input type="checkbox" id="day-opt-${o.offset}" ${savedDayTabs.includes(o.offset) ? "checked" : ""} />
+        <span>${o.label}</span>
+      </label>`,
+  ).join("");
+  dayTabsConfig.querySelectorAll<HTMLInputElement>("input").forEach((cb) => {
+    cb.addEventListener("change", () => {
+      cb.closest(".day-opt")!.classList.toggle("on", cb.checked);
+      markDirty();
+    });
+  });
+}
+
+function currentDayTabs(): number[] {
+  return DAY_OPTIONS.filter(
+    (o) => document.querySelector<HTMLInputElement>(`#day-opt-${o.offset}`)?.checked,
+  ).map((o) => o.offset);
+}
 
 const isMac = navigator.platform.toUpperCase().includes("MAC");
 
@@ -58,7 +105,10 @@ function displayFor(accel: string): string {
 async function loadCurrent() {
   const s = await invoke<Settings>("get_settings");
   captured = s.shortcut;
+  savedShortcut = s.shortcut;
+  savedDayTabs = s.day_tabs || [];
   shortcutText.textContent = displayFor(s.shortcut) || s.shortcut;
+  renderDayTabsConfig();
 }
 loadCurrent();
 
@@ -148,7 +198,13 @@ captureBox.addEventListener("blur", () => {
 // ---- Save / cancel ----
 saveBtn.addEventListener("click", async () => {
   try {
-    await invoke("set_shortcut", { shortcut: captured });
+    if (captured !== savedShortcut) {
+      await invoke("set_shortcut", { shortcut: captured });
+      savedShortcut = captured;
+    }
+    const dayTabs = currentDayTabs();
+    await invoke("set_day_tabs", { dayTabs });
+    savedDayTabs = dayTabs;
     statusEl.textContent = "已保存并生效";
     statusEl.className = "status ok";
     saveBtn.disabled = true;

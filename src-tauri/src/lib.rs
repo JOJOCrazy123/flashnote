@@ -22,15 +22,32 @@ struct Note {
     ts: i64, // unix millis
 }
 
+/// A note moved to the trash. `note` is flattened so the JSON keeps the same
+/// shape as a regular note plus a `deleted_at` timestamp.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct TrashEntry {
+    #[serde(flatten)]
+    note: Note,
+    deleted_at: i64,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Settings {
     shortcut: String,
+    #[serde(default = "default_day_tabs")]
+    day_tabs: Vec<u32>,
+}
+
+/// Day offsets (1 = yesterday … 6 = six days ago) shown as tabs in history.
+fn default_day_tabs() -> Vec<u32> {
+    vec![1, 2]
 }
 
 impl Default for Settings {
     fn default() -> Self {
         Settings {
             shortcut: "CmdOrCtrl+Shift+A".to_string(),
+            day_tabs: default_day_tabs(),
         }
     }
 }
@@ -83,6 +100,27 @@ fn save_day(app: &AppHandle, day: &str, notes: &[Note]) -> Result<(), String> {
     let path = day_file(app, day);
     let json = serde_json::to_string_pretty(notes).map_err(|e| e.to_string())?;
     fs::write(&path, json).map_err(|e| e.to_string())
+}
+
+fn trash_file(app: &AppHandle) -> PathBuf {
+    let dir = app
+        .path()
+        .app_data_dir()
+        .expect("failed to resolve app data dir");
+    let _ = fs::create_dir_all(&dir);
+    dir.join("trash.json")
+}
+
+fn load_trash(app: &AppHandle) -> Vec<TrashEntry> {
+    match fs::read_to_string(trash_file(app)) {
+        Ok(content) => serde_json::from_str(&content).unwrap_or_default(),
+        Err(_) => Vec::new(),
+    }
+}
+
+fn save_trash(app: &AppHandle, entries: &[TrashEntry]) -> Result<(), String> {
+    let json = serde_json::to_string_pretty(entries).map_err(|e| e.to_string())?;
+    fs::write(trash_file(app), json).map_err(|e| e.to_string())
 }
 
 fn today() -> String {
@@ -198,8 +236,66 @@ fn delete_note(app: AppHandle, id: String) -> Result<(), String> {
         .ok_or("invalid id")?;
     let day = day_of_ts(ts);
     let mut notes = load_day(&app, &day);
-    notes.retain(|n| n.id != id);
+    let pos = notes
+        .iter()
+        .position(|n| n.id == id)
+        .ok_or("note not found")?;
+    let note = notes.remove(pos);
+    save_day(&app, &day, &notes)?;
+
+    let mut trash = load_trash(&app);
+    trash.push(TrashEntry {
+        note,
+        deleted_at: Local::now().timestamp_millis(),
+    });
+    save_trash(&app, &trash)
+}
+
+#[tauri::command]
+fn get_trash(app: AppHandle) -> Vec<TrashEntry> {
+    let mut trash = load_trash(&app);
+    trash.sort_by(|a, b| b.deleted_at.cmp(&a.deleted_at));
+    trash
+}
+
+#[tauri::command]
+fn restore_note(app: AppHandle, id: String) -> Result<(), String> {
+    let mut trash = load_trash(&app);
+    let pos = trash
+        .iter()
+        .position(|e| e.note.id == id)
+        .ok_or("note not found")?;
+    let entry = trash.remove(pos);
+    save_trash(&app, &trash)?;
+
+    let day = day_of_ts(entry.note.ts);
+    let mut notes = load_day(&app, &day);
+    notes.push(entry.note);
     save_day(&app, &day, &notes)
+}
+
+#[tauri::command]
+fn delete_permanently(app: AppHandle, id: String) -> Result<(), String> {
+    let mut trash = load_trash(&app);
+    trash.retain(|e| e.note.id != id);
+    save_trash(&app, &trash)
+}
+
+#[tauri::command]
+fn empty_trash(app: AppHandle) -> Result<(), String> {
+    save_trash(&app, &[])
+}
+
+#[tauri::command]
+fn set_day_tabs(
+    app: AppHandle,
+    state: State<AppState>,
+    day_tabs: Vec<u32>,
+) -> Result<(), String> {
+    let mut s = state.settings.lock().unwrap();
+    s.day_tabs = day_tabs;
+    let json = serde_json::to_string_pretty(&*s).map_err(|e| e.to_string())?;
+    fs::write(settings_file(&app), json).map_err(|e| e.to_string())
 }
 
 fn day_of_ts(ts: i64) -> String {
@@ -533,8 +629,13 @@ pub fn run() {
             get_range,
             toggle_todo,
             delete_note,
+            get_trash,
+            restore_note,
+            delete_permanently,
+            empty_trash,
             get_settings,
             set_shortcut,
+            set_day_tabs,
             hide_window,
             open_settings
         ])

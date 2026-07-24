@@ -33,7 +33,7 @@
         "title": "FlashNote 设置",
         "url": "settings.html",
         "width": 420,
-        "height": 340,
+        "height": 400,
         "resizable": false,
         "decorations": true,
         "transparent": false,

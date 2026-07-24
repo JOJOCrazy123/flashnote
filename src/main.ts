@@ -21,12 +21,19 @@ interface Note {
 
 interface Settings {
   shortcut: string;
+  day_tabs: number[];
+}
+
+interface TrashedNote extends Note {
+  deleted_at: number;
 }
 
 // ---------- State ----------
 let currentKind: Kind = "inspiration";
 let historyOpen = false;
-let rangeMode: "day" | "week" | "month" = "day";
+// "today" | "day-N" (N = 1..6) | "week" | "month" | "trash"
+let rangeMode = "today";
+let settings: Settings = { shortcut: "", day_tabs: [1, 2] };
 
 // ---------- Helpers ----------
 function fmtDate(d: Date): string {
@@ -47,6 +54,23 @@ function startOfWeek(d: Date): Date {
 function fmtTime(ts: number): string {
   const d = new Date(ts);
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+function fmtDateTime(ts: number): string {
+  const d = new Date(ts);
+  return `${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} ${fmtTime(ts)}`;
+}
+
+function daysAgo(n: number): Date {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d;
+}
+
+function dayLabel(offset: number): string {
+  if (offset === 1) return "昨天";
+  if (offset === 2) return "前天";
+  return `${offset}天前`;
 }
 
 function escapeHtml(s: string): string {
@@ -70,6 +94,26 @@ async function toggleTodo(id: string, done: boolean): Promise<void> {
 
 async function deleteNote(id: string): Promise<void> {
   await invoke("delete_note", { id });
+}
+
+async function getSettings(): Promise<Settings> {
+  return await invoke<Settings>("get_settings");
+}
+
+async function getTrash(): Promise<TrashedNote[]> {
+  return await invoke<TrashedNote[]>("get_trash");
+}
+
+async function restoreNote(id: string): Promise<void> {
+  await invoke("restore_note", { id });
+}
+
+async function deletePermanently(id: string): Promise<void> {
+  await invoke("delete_permanently", { id });
+}
+
+async function emptyTrash(): Promise<void> {
+  await invoke("empty_trash");
 }
 
 async function hideWindow(): Promise<void> {
@@ -104,11 +148,8 @@ app.innerHTML = `
 
     <div class="history" id="history">
       <div class="history-head">
-        <div class="range-tabs">
-          <button class="range-tab active" data-range="day">今天</button>
-          <button class="range-tab" data-range="week">本周</button>
-          <button class="range-tab" data-range="month">本月</button>
-        </div>
+        <div class="range-tabs" id="range-tabs"></div>
+        <button class="trash-empty-btn" id="trash-empty-btn" style="display:none">清空垃圾箱</button>
       </div>
       <div class="history-list" id="history-list"></div>
     </div>
@@ -120,6 +161,8 @@ const wrap = document.querySelector<HTMLDivElement>("#wrap")!;
 const chipsEl = document.querySelector<HTMLDivElement>("#chips")!;
 const historyEl = document.querySelector<HTMLDivElement>("#history")!;
 const historyList = document.querySelector<HTMLDivElement>("#history-list")!;
+const rangeTabsEl = document.querySelector<HTMLDivElement>("#range-tabs")!;
+const trashEmptyBtn = document.querySelector<HTMLButtonElement>("#trash-empty-btn")!;
 
 // Committed-but-not-yet-saved entries (batch input via double-space).
 // Each entry remembers the kind that was active when it was committed, so
@@ -214,15 +257,47 @@ document.querySelector<HTMLButtonElement>("#gear")!.addEventListener("click", as
   await invoke("open_settings");
 });
 
-// Range tabs
-document.querySelectorAll<HTMLButtonElement>(".range-tab").forEach((tab) => {
-  tab.addEventListener("click", () => {
-    document.querySelectorAll(".range-tab").forEach((t) => t.classList.remove("active"));
-    tab.classList.add("active");
-    rangeMode = tab.dataset.range as typeof rangeMode;
-    renderHistory();
+// Range tabs (built dynamically from settings.day_tabs)
+function renderRangeTabs() {
+  const offsets = [...(settings.day_tabs || [])]
+    .filter((o) => o >= 1 && o <= 6)
+    .sort((a, b) => a - b);
+  const tabs: { mode: string; label: string }[] = [
+    { mode: "today", label: "今天" },
+    ...offsets.map((o) => ({ mode: `day-${o}`, label: dayLabel(o) })),
+    { mode: "week", label: "本周" },
+    { mode: "month", label: "本月" },
+    { mode: "trash", label: "垃圾箱" },
+  ];
+  const valid = new Set(tabs.map((t) => t.mode));
+  if (!valid.has(rangeMode)) rangeMode = "today";
+
+  rangeTabsEl.innerHTML = tabs
+    .map(
+      (t) =>
+        `<button class="range-tab${t.mode === rangeMode ? " active" : ""}${t.mode === "trash" ? " trash" : ""}" data-range="${t.mode}">${t.label}</button>`,
+    )
+    .join("");
+
+  rangeTabsEl.querySelectorAll<HTMLButtonElement>(".range-tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      rangeTabsEl.querySelectorAll(".range-tab").forEach((t) => t.classList.remove("active"));
+      tab.classList.add("active");
+      rangeMode = tab.dataset.range!;
+      renderHistory();
+    });
   });
-});
+}
+
+// Reload settings (day tabs may have changed in the settings window) then rebuild tabs.
+async function refreshTabs(): Promise<void> {
+  try {
+    settings = await getSettings();
+  } catch {
+    // keep last known settings
+  }
+  renderRangeTabs();
+}
 
 // Track IME composition so Enter used to pick a candidate never submits.
 input.addEventListener("compositionstart", () => {
@@ -268,7 +343,7 @@ function openHistory() {
   historyOpen = true;
   wrap.classList.add("expanded");
   getCurrentWindow().setSize(new LogicalSize(WIN_W, EXPANDED_H));
-  renderHistory();
+  refreshTabs().then(() => renderHistory());
 }
 
 function scheduleClose() {
@@ -295,16 +370,29 @@ wrap.addEventListener("mouseleave", () => {
 
 // ---------- History render ----------
 async function renderHistory() {
+  trashEmptyBtn.style.display = rangeMode === "trash" ? "" : "none";
+
+  if (rangeMode === "trash") {
+    renderTrashList(await getTrash());
+    return;
+  }
+
   const now = new Date();
   let start: string;
-  const end = fmtDate(now);
-
-  if (rangeMode === "day") {
-    start = end;
-  } else if (rangeMode === "week") {
+  let end: string;
+  if (rangeMode === "week") {
     start = fmtDate(startOfWeek(now));
-  } else {
+    end = fmtDate(now);
+  } else if (rangeMode === "month") {
     start = fmtDate(new Date(now.getFullYear(), now.getMonth(), 1));
+    end = fmtDate(now);
+  } else if (rangeMode.startsWith("day-")) {
+    const day = fmtDate(daysAgo(parseInt(rangeMode.slice(4), 10)));
+    start = day;
+    end = day;
+  } else {
+    start = fmtDate(now);
+    end = fmtDate(now);
   }
 
   const notes = await getRange(start, end);
@@ -334,7 +422,7 @@ async function renderHistory() {
           <span class="text">${escapeHtml(n.text)}</span>
           <span class="time">${fmtTime(n.ts)}</span>
           <span class="copy-state">已复制</span>
-          <button class="del" data-id="${n.id}" title="删除">✕</button>
+          <button class="del" data-id="${n.id}" title="移入垃圾箱">✕</button>
         </div>`;
     })
     .join("");
@@ -360,6 +448,56 @@ async function renderHistory() {
     });
   });
 }
+
+// ---------- Trash render ----------
+function renderTrashList(items: TrashedNote[]) {
+  if (items.length === 0) {
+    historyList.innerHTML = `<div class="empty">垃圾箱是空的</div>`;
+    return;
+  }
+
+  historyList.innerHTML = items
+    .map((n) => {
+      const badge = n.type === "todo" ? "todo" : "灵感";
+      return `
+        <div class="item trash-item" data-id="${n.id}" title="单击复制">
+          <span class="badge ${n.type}">${badge}</span>
+          <span class="text">${escapeHtml(n.text)}</span>
+          <span class="time">${fmtDateTime(n.ts)}</span>
+          <span class="copy-state">已复制</span>
+          <button class="restore" data-id="${n.id}" title="恢复">↩</button>
+          <button class="del permanent" data-id="${n.id}" title="彻底删除">✕</button>
+        </div>`;
+    })
+    .join("");
+
+  historyList.querySelectorAll<HTMLButtonElement>(".restore").forEach((btn) => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      await restoreNote(btn.dataset.id!);
+      renderHistory();
+    });
+  });
+  historyList.querySelectorAll<HTMLButtonElement>(".del").forEach((btn) => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      await deletePermanently(btn.dataset.id!);
+      renderHistory();
+    });
+  });
+  historyList.querySelectorAll<HTMLDivElement>(".item").forEach((item) => {
+    item.addEventListener("click", async (e) => {
+      if ((e.target as HTMLElement).closest(".del, .restore")) return;
+      const note = items.find((n) => n.id === item.dataset.id);
+      if (note) await copyNote(note.text, item);
+    });
+  });
+}
+
+trashEmptyBtn.addEventListener("click", async () => {
+  await emptyTrash();
+  renderHistory();
+});
 
 // ---------- Focus on shortcut ----------
 listen("focus-input", () => {
