@@ -384,12 +384,13 @@ async function renderHistory() {
     start = fmtDate(startOfWeek(now));
     end = fmtDate(now);
   } else if (rangeMode === "month") {
-    start = fmtDate(new Date(now.getFullYear(), now.getMonth(), 1));
+    // "本月" represents the latest 30 calendar days, including today.
+    start = fmtDate(daysAgo(29));
     end = fmtDate(now);
   } else if (rangeMode.startsWith("day-")) {
-    const day = fmtDate(daysAgo(parseInt(rangeMode.slice(4), 10)));
-    start = day;
-    end = day;
+    // A day tab is cumulative: e.g. "6天前" shows that day through today.
+    start = fmtDate(daysAgo(parseInt(rangeMode.slice(4), 10)));
+    end = fmtDate(now);
   } else {
     start = fmtDate(now);
     end = fmtDate(now);

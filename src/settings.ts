@@ -24,7 +24,7 @@ app.innerHTML = `
     <section class="row">
       <label>历史面板 · 显示最近几天</label>
       <div class="day-tabs-config" id="day-tabs-config"></div>
-      <p class="tip">勾选后，历史面板将显示对应日期的标签；今天、本周、本月始终显示</p>
+      <p class="tip">勾选后，历史面板将显示“对应日期至今天”的范围标签；今天、本周、本月始终显示</p>
     </section>
 
     <div class="actions">
@@ -42,7 +42,7 @@ const cancelBtn = document.querySelector<HTMLButtonElement>("#cancel")!;
 const statusEl = document.querySelector<HTMLSpanElement>("#status")!;
 const dayTabsConfig = document.querySelector<HTMLDivElement>("#day-tabs-config")!;
 
-// Day offsets (1 = yesterday … 6 = six days ago) the user can enable as history tabs.
+// Day offsets for cumulative history tabs (the selected day through today).
 const DAY_OPTIONS = [
   { offset: 1, label: "昨天" },
   { offset: 2, label: "前天" },
