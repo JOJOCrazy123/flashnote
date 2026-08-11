@@ -36,6 +36,8 @@ struct Settings {
     shortcut: String,
     #[serde(default = "default_day_tabs")]
     day_tabs: Vec<u32>,
+    #[serde(default = "default_note_kind")]
+    default_kind: String,
 }
 
 /// Day offsets (1 = yesterday … 6 = six days ago) shown as tabs in history.
@@ -43,11 +45,16 @@ fn default_day_tabs() -> Vec<u32> {
     vec![1, 2]
 }
 
+fn default_note_kind() -> String {
+    "inspiration".to_string()
+}
+
 impl Default for Settings {
     fn default() -> Self {
         Settings {
             shortcut: "CmdOrCtrl+Shift+A".to_string(),
             day_tabs: default_day_tabs(),
+            default_kind: default_note_kind(),
         }
     }
 }
@@ -298,6 +305,22 @@ fn set_day_tabs(
     fs::write(settings_file(&app), json).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn set_default_kind(
+    app: AppHandle,
+    state: State<AppState>,
+    default_kind: String,
+) -> Result<(), String> {
+    let mut s = state.settings.lock().unwrap();
+    s.default_kind = if default_kind == "todo" {
+        "todo".to_string()
+    } else {
+        "inspiration".to_string()
+    };
+    let json = serde_json::to_string_pretty(&*s).map_err(|e| e.to_string())?;
+    fs::write(settings_file(&app), json).map_err(|e| e.to_string())
+}
+
 fn day_of_ts(ts: i64) -> String {
     use chrono::TimeZone;
     Local
@@ -501,6 +524,16 @@ mod tests {
     fn rejects_duplicate_main_keys() {
         assert!(parse_shortcuts("Shift+Q+Q").is_none());
     }
+
+    #[test]
+    fn legacy_settings_default_to_inspiration() {
+        let settings: Settings = serde_json::from_str(
+            r#"{"shortcut":"CmdOrCtrl+Shift+A","day_tabs":[1,2]}"#,
+        )
+        .unwrap();
+
+        assert_eq!(settings.default_kind, "inspiration");
+    }
 }
 
 // ---------- App entry ----------
@@ -636,6 +669,7 @@ pub fn run() {
             get_settings,
             set_shortcut,
             set_day_tabs,
+            set_default_kind,
             hide_window,
             open_settings
         ])

@@ -5,6 +5,7 @@ import "./settings.css";
 interface Settings {
   shortcut: string;
   day_tabs: number[];
+  default_kind: "inspiration" | "todo";
 }
 
 const app = document.querySelector<HTMLDivElement>("#settings-app")!;
@@ -19,6 +20,15 @@ app.innerHTML = `
         <span id="shortcut-text">点击此处后按下组合键</span>
       </div>
       <p class="tip">需含至少一个修饰键（⌘/Ctrl/⌥/⇧）+ 一个或多个主键，例如 ⇧QW</p>
+    </section>
+
+    <section class="row">
+      <label>默认记录类型</label>
+      <div class="kind-config" id="kind-config">
+        <button class="kind-opt" data-kind="inspiration">灵感</button>
+        <button class="kind-opt" data-kind="todo">Todo</button>
+      </div>
+      <p class="tip">默认类型会在速记窗口中排在前面，并在每次唤起时自动选中</p>
     </section>
 
     <section class="row">
@@ -41,6 +51,7 @@ const saveBtn = document.querySelector<HTMLButtonElement>("#save")!;
 const cancelBtn = document.querySelector<HTMLButtonElement>("#cancel")!;
 const statusEl = document.querySelector<HTMLSpanElement>("#status")!;
 const dayTabsConfig = document.querySelector<HTMLDivElement>("#day-tabs-config")!;
+const kindConfig = document.querySelector<HTMLDivElement>("#kind-config")!;
 
 // Day offsets for cumulative history tabs (the selected day through today).
 const DAY_OPTIONS = [
@@ -59,6 +70,8 @@ const capturedMainKeys = new Set<string>();
 
 let savedShortcut = "";
 let savedDayTabs: number[] = [];
+let selectedDefaultKind: "inspiration" | "todo" = "inspiration";
+let savedDefaultKind: "inspiration" | "todo" = "inspiration";
 
 function markDirty() {
   saveBtn.disabled = false;
@@ -86,6 +99,20 @@ function currentDayTabs(): number[] {
   ).map((o) => o.offset);
 }
 
+function renderDefaultKind() {
+  kindConfig.querySelectorAll<HTMLButtonElement>(".kind-opt").forEach((btn) => {
+    btn.classList.toggle("on", btn.dataset.kind === selectedDefaultKind);
+  });
+}
+
+kindConfig.querySelectorAll<HTMLButtonElement>(".kind-opt").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    selectedDefaultKind = btn.dataset.kind as "inspiration" | "todo";
+    renderDefaultKind();
+    markDirty();
+  });
+});
+
 const isMac = navigator.platform.toUpperCase().includes("MAC");
 
 function displayFor(accel: string): string {
@@ -107,7 +134,10 @@ async function loadCurrent() {
   captured = s.shortcut;
   savedShortcut = s.shortcut;
   savedDayTabs = s.day_tabs || [];
+  selectedDefaultKind = s.default_kind === "todo" ? "todo" : "inspiration";
+  savedDefaultKind = selectedDefaultKind;
   shortcutText.textContent = displayFor(s.shortcut) || s.shortcut;
+  renderDefaultKind();
   renderDayTabsConfig();
 }
 loadCurrent();
@@ -205,6 +235,10 @@ saveBtn.addEventListener("click", async () => {
     const dayTabs = currentDayTabs();
     await invoke("set_day_tabs", { dayTabs });
     savedDayTabs = dayTabs;
+    if (selectedDefaultKind !== savedDefaultKind) {
+      await invoke("set_default_kind", { defaultKind: selectedDefaultKind });
+      savedDefaultKind = selectedDefaultKind;
+    }
     statusEl.textContent = "已保存并生效";
     statusEl.className = "status ok";
     saveBtn.disabled = true;

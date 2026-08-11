@@ -22,6 +22,7 @@ interface Note {
 interface Settings {
   shortcut: string;
   day_tabs: number[];
+  default_kind: Kind;
 }
 
 interface TrashedNote extends Note {
@@ -33,7 +34,7 @@ let currentKind: Kind = "inspiration";
 let historyOpen = false;
 // "today" | "day-N" (N = 1..6) | "week" | "month" | "trash"
 let rangeMode = "today";
-let settings: Settings = { shortcut: "", day_tabs: [1, 2] };
+let settings: Settings = { shortcut: "", day_tabs: [1, 2], default_kind: "inspiration" };
 
 // ---------- Helpers ----------
 function fmtDate(d: Date): string {
@@ -163,6 +164,7 @@ const historyEl = document.querySelector<HTMLDivElement>("#history")!;
 const historyList = document.querySelector<HTMLDivElement>("#history-list")!;
 const rangeTabsEl = document.querySelector<HTMLDivElement>("#range-tabs")!;
 const trashEmptyBtn = document.querySelector<HTMLButtonElement>("#trash-empty-btn")!;
+const kindToggle = document.querySelector<HTMLDivElement>(".kind-toggle")!;
 
 // Committed-but-not-yet-saved entries (batch input via double-space).
 // Each entry remembers the kind that was active when it was committed, so
@@ -171,6 +173,31 @@ let pending: { text: string; kind: Kind }[] = [];
 let composing = false;
 let lastSpaceTs = 0;
 const DOUBLE_SPACE_MS = 350;
+
+function selectKind(kind: Kind, reorder = false) {
+  currentKind = kind;
+  const selected = kindToggle.querySelector<HTMLButtonElement>(`[data-kind="${kind}"]`)!;
+  if (reorder) kindToggle.prepend(selected);
+  kindToggle.querySelectorAll<HTMLButtonElement>(".kind-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn === selected);
+  });
+  input.placeholder =
+    kind === "todo"
+      ? "记录一个 todo... (连按两次空格继续下一条)"
+      : "记录一个灵感... (连按两次空格继续下一条)";
+}
+
+async function refreshSettings(applyDefault = false): Promise<void> {
+  try {
+    settings = await getSettings();
+  } catch {
+    // Keep the last known settings if loading fails.
+  }
+  if (applyDefault) {
+    const defaultKind: Kind = settings.default_kind === "todo" ? "todo" : "inspiration";
+    selectKind(defaultKind, true);
+  }
+}
 
 function renderChips() {
   chipsEl.innerHTML = pending
@@ -239,13 +266,7 @@ async function finishInput() {
 // Kind toggle
 document.querySelectorAll<HTMLButtonElement>(".kind-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
-    document.querySelectorAll(".kind-btn").forEach((b) => b.classList.remove("active"));
-    btn.classList.add("active");
-    currentKind = btn.dataset.kind as Kind;
-    input.placeholder =
-      currentKind === "todo"
-        ? "记录一个 todo... (连按两次空格继续下一条)"
-        : "记录一个灵感... (连按两次空格继续下一条)";
+    selectKind(btn.dataset.kind as Kind);
     renderChips();
     input.focus();
   });
@@ -291,11 +312,7 @@ function renderRangeTabs() {
 
 // Reload settings (day tabs may have changed in the settings window) then rebuild tabs.
 async function refreshTabs(): Promise<void> {
-  try {
-    settings = await getSettings();
-  } catch {
-    // keep last known settings
-  }
+  await refreshSettings();
   renderRangeTabs();
 }
 
@@ -501,13 +518,17 @@ trashEmptyBtn.addEventListener("click", async () => {
 });
 
 // ---------- Focus on shortcut ----------
-listen("focus-input", () => {
+listen("focus-input", async () => {
+  await refreshSettings(true);
   input.focus();
   input.select();
 });
 
 // Focus once on load (dev convenience)
-window.addEventListener("DOMContentLoaded", () => input.focus());
+window.addEventListener("DOMContentLoaded", async () => {
+  await refreshSettings(true);
+  input.focus();
+});
 input.focus();
 
 // Expose settings type so tsc keeps the import meaningful if extended later.

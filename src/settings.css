@@ -85,6 +85,34 @@ h1 {
   gap: 8px;
 }
 
+.kind-config {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.kind-opt {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  background: var(--paper-raised);
+  color: var(--muted);
+  transition: all 0.15s;
+}
+
+.kind-opt:hover {
+  border-color: rgba(255, 75, 43, 0.55);
+}
+
+.kind-opt.on {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(255, 75, 43, 0.06);
+  font-weight: 600;
+}
+
 .day-opt {
   display: inline-flex;
   align-items: center;
